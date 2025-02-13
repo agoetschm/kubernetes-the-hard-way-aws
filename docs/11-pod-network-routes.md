@@ -14,7 +14,11 @@ In production workloads this functionality will be provided by CNI plugins like 
 
 Print the internal IP address and Pod CIDR range for each worker instance and create route table entries:
 
+
+
 ```sh
+ROUTE_TABLE_ID=$(aws ec2 describe-route-tables --filters "Name=tag:Name,Values=kubernetes" --output text --query 'RouteTables[].RouteTableId')
+
 for instance in worker-0 worker-1 worker-2; do
   instance_id_ip="$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
@@ -27,6 +31,7 @@ for instance in worker-0 worker-1 worker-2; do
     --output text --query 'UserData.Value' \
     | base64 --decode | tr "|" "\n" | grep "^pod-cidr" | cut -d'=' -f2)"
   echo "${instance_ip} ${pod_cidr}"
+  echo "$ROUTE_TABLE_ID"
 
   aws ec2 create-route \
     --route-table-id "${ROUTE_TABLE_ID}" \
